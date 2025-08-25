@@ -16,6 +16,15 @@ const app = express();
 app.use(express.json()); // Indique que l'ont va pouvoir traduire le JSON et que l'ont va utiliser des cookies
 app.use(cookieParser());
 
+app.use(
+  cors({
+    origin: "*",
+    methods : ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-type"],
+    credentials: true,
+  })
+)
+
 app.use("/", routes); // Chaque route localhost:3000 sera dirigé vers le dossier routes
 
 app.listen(PORT, () => {
