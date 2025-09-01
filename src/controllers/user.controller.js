@@ -1,52 +1,96 @@
+import { sendConfirmationEmail } from "../email/email.js";
+import TempUser from "../models/tempuser.schema.js";
 import User from "../models/user.schema.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const createTokenEmail = (email) => {
+  return jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: "120s" });
+};
 
 export const register = async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
+  try {
+    const { username, email, password } = req.body;
 
-        const user = await User.findOne({ email });
-        const secondUser = await User.findOne({ username });
+    const existingUserMail = await User.findOne({ email });
+    const existingUserPseudo = await User.findOne({ username });
+    const existingTempUserMail = await TempUser.findOne({ email });
+    const existingTempUserPseudo = await TempUser.findOne({ username });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        if (user || secondUser) {
-            return res.status(400).json({ message : "Déjà inscrit" })
-        }
-
-        const newUser = new User({
-            username,
-            email,
-            password: hashedPassword
-        });
-        await newUser.save();
-        res.status(200).json({ message: "Utilisateur enregistré" });
-    } catch (error) {
-        console.log(error);
+    if (existingUserMail || existingUserPseudo) {
+      return res.status(400).json({ message: "Déjà inscrit" });
+    } else if (existingTempUserMail || existingTempUserPseudo) {
+      return res.status(400).json({ message: "Vérifiez vos mails" });
     }
+
+    const token = createTokenEmail(email);
+    await sendConfirmationEmail(token, email);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const tempUser = new TempUser({
+      username,
+      email,
+      password: hashedPassword,
+      token,
+    });
+    await tempUser.save();
+    res.status(200).json({
+      message:
+        "Veillez consulter votre inscription en consultant votre boite mail",
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const login = async (req, res) => {
-    const { data, password } = req.body;
-    let user;
+  const { data, password } = req.body;
+  let user;
 
-    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+  const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
-    if (emailRegex.test(data)) {
-        user = await User.findOne({ email: data });
-    } else {
-        user = await User.findOne({ username: data });
+  if (emailRegex.test(data)) {
+    user = await User.findOne({ email: data });
+  } else {
+    user = await User.findOne({ username: data });
+  }
+
+  if (!user) {
+    res.status(400).json({ message: "Email et/ou mot de passe incorrect" });
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(password, user.password);
+  if (!isPasswordCorrect) {
+    return res.status(400).json({ message: "Mot de passe incorect" });
+  }
+
+  res.status(200).json({ user, message: "Connexion réussie" });
+};
+
+export const verifyMail = async (req, res) => {
+  // console.log("TEST EMAIL");
+  const { token } = req.params;
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const tempUser = await TempUser.findOne({ email: decoded.email, token });
+    if (!tempUser) {
+      // gestion du feedback à créer
+      return res.redirect(`${process.env.CLIENT_URL}/register?message=error`);
     }
 
-
-    if(!user) {
-        res.status(400).json({ message : "Email et/ou mot de passe incorrect" });
+    const newUser = new User({
+      username: tempUser.username,
+      email: tempUser.email,
+      password: tempUser.password,
+    });
+    await newUser.save();
+    await TempUser.deleteOne({ email: tempUser.email });
+    return res.redirect(`${process.env.CLIENT_URL}/register?message=success`);
+  } catch (error) {
+    console.log(error);
+    if (error.name === "TokenExpiredError") {
+      return res.redirect(`${process.env.CLIENT_URL}/register?message=error`);
     }
-
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-        return res.status(400).json({ message: "Mot de passe incorect"});
-    }
-
-    res.status(200).json({ user, message: "Connexion réussie"});
+  }
 };

@@ -1,14 +1,16 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
+const tempUserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    token: String,
   },
   { timestamps: true }
 );
+tempUserSchema.index({ createAt: 1 }, { expireAfterSeconds: 120 });
 
-const User = mongoose.model("User", userSchema);
+const TempUser = mongoose.model("TempUser", tempUserSchema);
 
-export default User;
+export default TempUser;
