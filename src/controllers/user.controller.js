@@ -112,7 +112,7 @@ export const currentUser = async (req, res) => {
 
   if (token) {
     try {
-      const decodedToken = jwt.verify(token, process.env.SSECRET_KEY); // vérifie en décodant le token avec la clé secrete
+      const decodedToken = jwt.verify(token, process.env.SECRET_KEY); // vérifie en décodant le token avec la clé secrete
       const currentUser = await User.findById(decodedToken.sub); // récupère l'utilisateur en se servant de l'id du token
 
       if (currentUser) {
@@ -121,9 +121,17 @@ export const currentUser = async (req, res) => {
         res.status(400).json(null);
       }
     } catch (error) {
-      res.statu(400).json(null);
+      res.status(400).json(null);
     }
   } else {
-    res.statu(400).json(null);
+    res.status(400).json(null);
   }
+};
+
+export const logoutUser = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,
+  });
+  res.status(200).json({ message: "Déconnexion réussie" });
 };
