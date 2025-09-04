@@ -113,7 +113,7 @@ export const currentUser = async (req, res) => {
   if (token) {
     try {
       const decodedToken = jwt.verify(token, process.env.SSECRET_KEY); // vérifie en décodant le token avec la clé secrete
-      const currentUser = await User.findById(decodedToken.subject); // récupère l'utilisateur en se servant de l'id du token
+      const currentUser = await User.findById(decodedToken.sub); // récupère l'utilisateur en se servant de l'id du token
 
       if (currentUser) {
         res.status(200).json(currentUser);
