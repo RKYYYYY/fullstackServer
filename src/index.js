@@ -18,12 +18,12 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "*",
-    methods : ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-type"],
     credentials: true,
   })
-)
+);
 
 app.use("/", routes); // Chaque route localhost:3000 sera dirigé vers le dossier routes
 

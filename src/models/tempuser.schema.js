@@ -9,7 +9,7 @@ const tempUserSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-tempUserSchema.index({ createAt: 1 }, { expireAfterSeconds: 120 });
+tempUserSchema.index({ createdAt: 1 }, { expireAfterSeconds: 120 });
 
 const TempUser = mongoose.model("TempUser", tempUserSchema);
 
