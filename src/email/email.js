@@ -15,7 +15,11 @@ export const sendConfirmationEmail = async (token, email) => {
     from: process.env.EMAIL_USER,
     to: email,
     subject: "Confirmation d'inscription",
-    html: `<p>Bienvenue sur notre site ! Cliquez sur le lien suivant pour valider vorote inscription : <a href=${process.env.API_URL}/user/verifyMail/${token}>Confirmer mon inscription</a></p>`,
+    html: `<p>Bienvenue sur notre site ! Cliquez sur le lien suivant pour valider vorote inscription : <a href=${
+      process.env.MODE === "development"
+        ? process.env.API_URL
+        : process.env.DEPLOY_BACK_URL
+    }/user/verifyMail/${token}>Confirmer mon inscription</a></p>`,
   };
 
   await transporter.sendMail(mailOptions);

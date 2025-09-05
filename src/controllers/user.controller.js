@@ -75,20 +75,29 @@ export const login = async (req, res) => {
     httpOnly: true,
     secure: true, // false en local, true déployé
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7j de 24h de 60min de 60sec (1000 pour préciser en millisecondes)
+    sameSite: "None",
   });
 
   res.status(200).json({ user, message: "Connexion réussie" });
 };
 
 export const verifyMail = async (req, res) => {
-  // console.log("TEST EMAIL");
   const { token } = req.params;
+  console.log(token);
+
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     const tempUser = await TempUser.findOne({ email: decoded.email, token });
+
     if (!tempUser) {
       // gestion du feedback à créer
-      return res.redirect(`${process.env.CLIENT_URL}/register?message=error`);
+      return res.redirect(
+        `${
+          process.env.MODE === deployment
+            ? process.env.CLIENT_URL
+            : process.env.DEPLOY_FRONT_URL
+        }/register?message=error`
+      );
     }
 
     const newUser = new User({
@@ -98,11 +107,23 @@ export const verifyMail = async (req, res) => {
     });
     await newUser.save();
     await TempUser.deleteOne({ email: tempUser.email });
-    return res.redirect(`${process.env.CLIENT_URL}/register?message=success`);
+    return res.redirect(
+      `${
+        process.env.MODE === "development"
+          ? process.env.CLIENT_URL
+          : process.env.DEPLOY_FRONT_URL
+      }/register?message=success`
+    );
   } catch (error) {
     console.log(error);
     if (error.name === "TokenExpiredError") {
-      return res.redirect(`${process.env.CLIENT_URL}/register?message=error`);
+      return res.redirect(
+        `${
+          process.env.MODE === "development"
+            ? process.env.CLIENT_URL
+            : process.env.DEPLOY_FRONT_URL
+        }/register?message=error`
+      );
     }
   }
 };
@@ -132,6 +153,7 @@ export const logoutUser = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: false,
+    sameSite: "None",
   });
   res.status(200).json({ message: "Déconnexion réussie" });
 };
