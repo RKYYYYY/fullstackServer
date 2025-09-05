@@ -73,7 +73,7 @@ export const login = async (req, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true, // false en local, true déployé
+    secure: process.env.MODE === "development" ? false : true, // false en local, true déployé
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7j de 24h de 60min de 60sec (1000 pour préciser en millisecondes)
     sameSite: "None",
   });
@@ -152,7 +152,7 @@ export const currentUser = async (req, res) => {
 export const logoutUser = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
+    secure: process.env.MODE === "development" ? false : true, // false en local, true déployé
     sameSite: "None",
   });
   res.status(200).json({ message: "Déconnexion réussie" });
