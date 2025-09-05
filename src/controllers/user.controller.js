@@ -93,7 +93,7 @@ export const verifyMail = async (req, res) => {
       // gestion du feedback à créer
       return res.redirect(
         `${
-          process.env.MODE === deployment
+          process.env.MODE === "development"
             ? process.env.CLIENT_URL
             : process.env.DEPLOY_FRONT_URL
         }/register?message=error`
